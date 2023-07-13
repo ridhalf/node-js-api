@@ -18,3 +18,16 @@
   "test": "jest -i" // agar unit test sequensial
   },
 - npm install --save-dev supertest @types/supertest // karena menggunakan express supaya lebih mudah implementasi unit test jest
+
+## PROJECT
+
+- atur database
+- buat schema
+- buat validation
+- buat service
+- buat controller
+- buat route (public api)
+- panggil public api pada application web.js
+- buat middleware
+- panggil middleware pada applicationn web.js
+-
