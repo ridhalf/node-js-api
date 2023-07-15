@@ -1,12 +1,13 @@
 import { prismaClient } from "../application/database.js";
 import { ResponseError } from "../error/response-error.js";
-import { registerUserValidation,loginUserValidation } from "../validation/user-validation.js"
+import * as uval from "../validation/user-validation.js"
 import { validate } from "../validation/validation.js"
 import bcrypt from "bcrypt"
 import {v4 as uuid} from "uuid"
+import {constants as httpStatus} from "http2"
 
 const register = async (request) =>{
-    const user = validate(registerUserValidation,request);
+    const user = validate(uval.registerUserValidation,request);
 
     const countUser = await prismaClient.user.count({
         where:{
@@ -30,22 +31,36 @@ const register = async (request) =>{
 }
 
 const login = async (request)=>{
-    const loginRequest = validate(loginUserValidation,request);
+    const loginRequest = validate(uval.loginUserValidation,request);
     const user = await prismaClient.user.findUnique({
         where:{
             username:loginRequest.username
         },
         select:{
             username:true,
-            password:true
+            password:true,
+            wrong_login:true
         }
     })
+
     if(!user){
         throw new ResponseError(401,"Username or password wrong");
     }
 
+    if(user.wrong_login >= 3){
+        throw new ResponseError(httpStatus.HTTP_STATUS_UNAUTHORIZED,"Akun anda diblokir");
+    }
+
     const isPasswordValid = await bcrypt.compare(loginRequest.password, user.password);
     if(!isPasswordValid){
+        const wrong_login = await prismaClient.user.update({
+            data:{
+                wrong_login : user.wrong_login + 1,
+            },
+            where:{
+                username: user.username
+            }
+        })
         throw new ResponseError(401,"Username or password wrong");
     }
     const token = uuid().toString()
@@ -60,11 +75,26 @@ const login = async (request)=>{
             token:true
         }
     })
-
-
+}
+const get = async (username)=>{
+     username = validate(uval.getUserValidation, username);
+     const user = await prismaClient.user.findUnique({
+         where:{
+             username:username
+         },
+         select:{
+             username:true,
+             name:true
+         }
+     })
+    if(!user){
+        throw new ResponseError(404, "User is not found");
+    }
+    return user;
 }
 
 export default{
     register,
-    login
+    login,
+    get
 }
