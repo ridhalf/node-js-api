@@ -5,6 +5,7 @@ import { validate } from "../validation/validation.js"
 import bcrypt from "bcrypt"
 import {v4 as uuid} from "uuid"
 import {constants as httpStatus} from "http2"
+import {getUserValidation, updateUserValidation} from "../validation/user-validation.js";
 
 const register = async (request) =>{
     const user = validate(uval.registerUserValidation,request);
@@ -93,8 +94,62 @@ const get = async (username)=>{
     return user;
 }
 
+const update = async (request)=>{
+    const user = validate(updateUserValidation, request);
+    const totalUserInDatabase = await prismaClient.user.count({
+        where:{
+            username:user.username
+        }
+    });
+    if(totalUserInDatabase != 1){
+        throw new ResponseError(404, "User not found");
+    }
+    const data={};
+    if (user.name){
+        data.name = user.name
+    }
+    if(user.password){
+        data.password = await bcrypt.hash(user.password,10);
+    }
+    return prismaClient.user.update({
+        where:{
+            username:user.username
+        },
+        data:data,
+        select:{
+            username:true,
+            name:true
+        }
+    })
+}
+
+const logout = async (username) =>{
+    username = validate(getUserValidation, username);
+    const user = await prismaClient.user.findUnique({
+        where:{
+            username:username
+        }
+    })
+    if(!user){
+        throw new ResponseError(404,"user is not found");
+    }
+    return prismaClient.user.update({
+        where:{
+            username:user.username
+        },
+        data:{
+            token:null
+        },
+        select:{
+            username:true
+        }
+    })
+}
+
 export default{
     register,
     login,
-    get
+    get,
+    update,
+    logout
 }
