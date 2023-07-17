@@ -2,7 +2,6 @@ import supertest from "supertest"
 import { web } from "../application/web.js";
 import { logger } from "../application/logging.js";
 import {createTestUser, getTestUser, removeTestUser} from "./test-util.js";
-import {func} from "joi";
 import bcrypt from "bcrypt";
 
 describe('POST /api/users', function(){
