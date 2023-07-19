@@ -1,4 +1,11 @@
-import {createTestContact, createTestUser, getTestContact, removeAllTestContacts, removeTestUser} from "./test-util.js";
+import {
+    createManyTestContact,
+    createTestContact,
+    createTestUser,
+    getTestContact,
+    removeAllTestContacts,
+    removeTestUser
+} from "./test-util.js";
 import supertest from "supertest";
 import {web} from "../application/web.js";
 import {logger} from "../application/logging.js";
@@ -76,4 +83,176 @@ describe('GET /api/contacts/:contactId', function (){
         expect(result.body.errors).toBeDefined()
     })
 
+})
+
+describe('PUT /api/contacts/:contactId', function (){
+    beforeEach(async ()=>{
+        await createTestUser()
+        await createTestContact()
+    })
+    afterEach(async ()=>{
+        await removeAllTestContacts()
+        await removeTestUser()
+    })
+    it('should can update existing contact', async ()=>{
+        const testContact = await getTestContact()
+        const result = await supertest(web)
+            .put("/api/contacts/" + testContact.id)
+            .set("Authorization","test")
+            .send({
+                first_name:"ridhal",
+                last_name:"fajri",
+                email:"ridhal@gmail.com",
+                phone:"08000000"
+            })
+        logger.info(result);
+        expect(result.status).toBe(200)
+        expect(result.body.data.id).toBe(testContact.id)
+        expect(result.body.data.first_name).toBe("ridhal")
+        expect(result.body.data.last_name).toBe("fajri")
+        expect(result.body.data.email).toBe("ridhal@gmail.com")
+        expect(result.body.data.phone).toBe("08000000")
+    })
+    it('should reject if request is invalid', async ()=>{
+        const testContact = await getTestContact()
+        const result = await supertest(web)
+            .put("/api/contacts/" + testContact.id)
+            .set("Authorization","test")
+            .send({
+                first_name:"",
+                last_name:"",
+                email:"ridhal",
+                phone:""
+            })
+        logger.info(result);
+        expect(result.status).toBe(400)
+    })
+
+    it('should contact is not found', async ()=>{
+        const testContact = await getTestContact()
+        const result = await supertest(web)
+            .put("/api/contacts/" + (testContact.id + 1))
+            .set("Authorization","test")
+            .send({
+                first_name:"ridhal",
+                last_name:"fajri",
+                email:"ridhal@gmail.com",
+                phone:"08000000"
+            })
+        logger.info(result);
+        expect(result.status).toBe(404)
+    })
+
+})
+
+describe('DELETE /api/contacts/:contactId', function (){
+    beforeEach(async ()=>{
+        await createTestUser()
+        await createTestContact()
+    })
+    afterEach(async ()=>{
+        await removeAllTestContacts()
+        await removeTestUser()
+    })
+    it('should can delete contact', async ()=>{
+        let testContact = await getTestContact()
+        const result = await supertest(web)
+            .delete("/api/contacts/" + testContact.id)
+            .set("Authorization","test");
+
+        expect(result.status).toBe(200);
+        expect(result.body.data).toBe("OK");
+
+        testContact = await getTestContact();
+        expect(testContact).toBeNull();
+    })
+    it('should contact is not found', async ()=>{
+        let testContact = await getTestContact()
+        const result = await supertest(web)
+            .delete("/api/contacts/" + testContact.id + 1)
+            .set("Authorization","test");
+
+        expect(result.status).toBe(404);
+    })
+
+})
+
+describe('GET /api/contacts',function(){
+
+    beforeEach(async ()=>{
+        await createTestUser()
+        await createManyTestContact()
+    })
+    afterEach(async ()=>{
+        await removeAllTestContacts()
+        await removeTestUser()
+    })
+
+    it('should can search without parameter', async ()=>{
+        const result = await supertest(web)
+            .get('/api/contacts')
+            .set("Authorization","test")
+
+        expect(result.status).toBe(200);
+        expect(result.body.data.length).toBe(10);
+        expect(result.body.paging.page).toBe(1);
+        expect(result.body.paging.total_page).toBe(2);
+        expect(result.body.paging.total_item).toBe(15);
+    })
+    it('should can search to page 2', async ()=>{
+        const result = await supertest(web)
+            .get('/api/contacts')
+            .query({
+                page:2
+            })
+            .set("Authorization","test")
+
+        expect(result.status).toBe(200);
+        expect(result.body.data.length).toBe(5);
+        expect(result.body.paging.page).toBe(2);
+        expect(result.body.paging.total_page).toBe(2);
+        expect(result.body.paging.total_item).toBe(15);
+    })
+    it('should can search using name', async ()=>{
+        const result = await supertest(web)
+            .get('/api/contacts')
+            .query({
+                name:"test 1"
+            })
+            .set("Authorization","test")
+
+        expect(result.status).toBe(200);
+        expect(result.body.data.length).toBe(6);
+        expect(result.body.paging.page).toBe(1);
+        expect(result.body.paging.total_page).toBe(1);
+        expect(result.body.paging.total_item).toBe(6);
+    })
+    it('should can search using email', async ()=>{
+        const result = await supertest(web)
+            .get('/api/contacts')
+            .query({
+                email:"test1"
+            })
+            .set("Authorization","test")
+
+        expect(result.status).toBe(200);
+        expect(result.body.data.length).toBe(6);
+        expect(result.body.paging.page).toBe(1);
+        expect(result.body.paging.total_page).toBe(1);
+        expect(result.body.paging.total_item).toBe(6);
+    })
+    it('should can search using phone', async ()=>{
+        const result = await supertest(web)
+            .get('/api/contacts')
+            .query({
+                phone:"0822800000001"
+            })
+            .set("Authorization","test")
+
+        expect(result.status).toBe(200);
+        expect(result.body.data.length).toBe(6);
+        expect(result.body.paging.page).toBe(1);
+        expect(result.body.paging.total_page).toBe(1);
+        expect(result.body.paging.total_item).toBe(6);
+    })
 })

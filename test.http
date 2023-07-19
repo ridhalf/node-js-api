@@ -1,0 +1,44 @@
+POST http://localhost:3000/api/users
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "ridhal",
+  "password": "password",
+  "name": "Ridhal Fajri"
+}
+
+### bc828883-624e-4e4d-aad3-77f44ce94c0c
+
+POST http://localhost:3000/api/users/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "ridhal",
+  "password": "password"
+}
+###
+GET http://localhost:3000/api/users/current
+Content-Type: application/json
+Accept: application/json
+Authorization: 20fba931-45e0-4fd5-8cf6-d243cce8eb0c
+
+###
+PATCH http://localhost:3000/api/users/current
+Content-Type: application/json
+Accept: application/json
+Authorization: 20fba931-45e0-4fd5-8cf6-d243cce8eb0c
+
+{
+  "name": "Tom Riddle"
+}
+###
+DELETE http://localhost:3000/api/users/current
+Content-Type: application/json
+Accept: application/json
+Authorization: 20fba931-45e0-4fd5-8cf6-d243cce8eb0c
+
+{
+"name": "Tom Riddle"
+}
